@@ -45,6 +45,8 @@ stack<char> op_stack;
 stack<pair<NFANode*, NFANode*> > node_stack;
 
 void NFA_pop_node_by_op(char op) {
+    // top()
+    // accesses the top element.
 	auto pair_ = node_stack.top();
 	NFANode * start = pair_.first, *end = pair_.second;
 	switch (op) {
@@ -83,6 +85,8 @@ void NFA_pop_node_by_op(char op) {
 		break;
 	}
     // ? : Causes the resulting RE to match 0 or 1 repetitions of the preceding RE.
+    // + : Causes the resulting RE to match 1 or more repetitions of the preceding RE.
+    // * : Causes the resulting RE to match 0 or more repetitions of the preceding RE.
 	case '?':
 	case '+':
 	case '*': {
