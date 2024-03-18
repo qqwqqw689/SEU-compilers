@@ -129,8 +129,9 @@ void NFA_pop_node_by_op(char op) {
 }
 
 pair<NFANode*, NFANode*> newRegInput(char * str) {
+    // Empty all of them.
 	while (!(op_stack.empty())) op_stack.pop();
-	while (!(node_stack.empty()))node_stack.pop();
+	while (!(node_stack.empty())) node_stack.pop();
 	int ptr = 0;
 	char cur = str[ptr];
 
