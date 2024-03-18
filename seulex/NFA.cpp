@@ -31,6 +31,7 @@ struct NFANode {
 };
 
 int FA_flag[65536];
+// int FA_flag[] Indicates whether each node is a final state and the number of the final state
 
 NFANode NFANodes[65536];
 
@@ -138,8 +139,8 @@ pair<NFANode*, NFANode*> newRegInput(char * str) {
 	NFANode * initNode = newNFANode();
 	node_stack.push({ initNode, initNode });
 
-	while (cur != '\0') {
-		if (cur != '\\') {
+	while (cur != '\0') { // End of the Reg.
+		if (cur != '\\') { 
 			switch (cur) {
 			case '(':
 			case '|': {
@@ -150,7 +151,7 @@ pair<NFANode*, NFANode*> newRegInput(char * str) {
 					while (op != '(') {
 						NFA_pop_node_by_op(op);
 						op_stack.pop();
-						if (op_stack.empty()) break;
+						if (op_stack.empty()) break; // never go to '(' process.
 						else op = op_stack.top();
 					}
 				}
@@ -161,6 +162,9 @@ pair<NFANode*, NFANode*> newRegInput(char * str) {
 			}
 			case ')':
 			case '\0': {
+				// According to stack rules,
+				// pair2 is first.
+				// pair2 -> pair_
 				char op = op_stack.top();
 				while (op != '(') {
 					NFA_pop_node_by_op(op);
