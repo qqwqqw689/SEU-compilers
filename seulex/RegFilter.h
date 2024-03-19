@@ -79,6 +79,12 @@ struct RegFilter{
 		std::string::size_type pos = 0;
 		std::string::size_type srclen = strsrc.size();
 		std::string::size_type dstlen = strdst.size();
+		// size_t find (const string& str, size_t pos = 0) const;
+		// Searches the string for the first occurrence of
+		// the sequence specified by its arguments.
+		// When pos is specified, the search only includes characters at or after position pos
+		// return value : The position of the first character of the first match.
+		// If no matches were found, the function returns string::npos
 		while ((pos = strBig.find(strsrc, pos)) != std::string::npos){
 			strBig.replace(pos, srclen, strdst);
 			pos += dstlen;

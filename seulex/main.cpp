@@ -32,6 +32,8 @@ int main(){
 
 	auto regs = yyl.regex_rules;
 	for (auto & p_ : regs) {
+		// rbegin()
+		// Returns an iterator to the reverse-beginning of the given range.
 		if (*p_.first.begin() == '\"' && *p_.first.rbegin() == '\"') {
 			p_.first = RegFilter::quoteFilter(p_.first);
 		} else {
