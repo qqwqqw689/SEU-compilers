@@ -30,7 +30,7 @@ struct YylParser{
 		return{ left, right };
 	}
 
-    // lex file format .
+    // lex file format.
     /*
     definitions
     %%
