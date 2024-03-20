@@ -1,12 +1,13 @@
-#pragma once
+#ifndef YYLPARSER_H
+#define YYLPARSER_H
 
-#include<iostream>
-#include<fstream>
-#include<cstdlib>
-#include<cstdio>
-#include<string>
-#include<map>
-#include<vector>
+#include	<iostream>
+#include	<fstream>
+#include	<cstdlib>
+#include	<cstdio>
+#include	<string>
+#include	<map>
+#include	<vector>
 
 struct YylParser{
 	std::string program1;
@@ -81,6 +82,7 @@ struct YylParser{
 			}
 			case 2:
 				program2 += ln; // fix me???
+				// program2 += ln + "\n";
 				break;
 			default:
 				throw "";
@@ -103,3 +105,5 @@ struct YylParser{
 	}
 
 };
+
+#endif

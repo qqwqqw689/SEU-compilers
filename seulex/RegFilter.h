@@ -227,6 +227,8 @@ struct RegFilter{
 
 	static std::string quoteFilter(std::string src) {
 		std::string ans = "";
+		// string substr (size_t pos = 0, size_t len = npos) const;
+		// starts at character position pos and spans len characters 
 		src = src.substr(1, src.length()-2);
 		for (char c : src) {
 			switch (c){
