@@ -1,4 +1,5 @@
-#pragma once
+#ifndef REGFILTER_H
+#define REGFILTER_H
 
 /*
     Substituting regular expressions, eliminating complex syntax, and 
@@ -122,6 +123,8 @@ struct RegFilter{
 
 		int Array[127] = { 0 };
 		std::string newStr;
+		// the caret (^) at the beginning of a pattern usually signifies
+		// that the pattern should only match at the beginning of a line
 		if (str[0] != '^') {
 			for (int i = 0; i < str.length(); i++)	{
 				if (str[i] == CHAR_link) {
@@ -253,3 +256,5 @@ struct RegFilter{
 
 
 };
+
+#endif

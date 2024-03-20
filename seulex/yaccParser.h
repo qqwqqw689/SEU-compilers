@@ -1,4 +1,5 @@
-#pragma once
+#ifndef YYPARSER_H
+#define YYPARSER_H
 
 #include<iostream>
 #include<fstream>
@@ -194,3 +195,5 @@ struct YaccParser {
 	}
 
 };
+
+#endif

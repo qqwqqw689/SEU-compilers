@@ -1,5 +1,5 @@
-#pragma once
-
+#ifndef NFA_H
+#define NFA_H
 #include <cstdlib>
 
 #include <cstdio>
@@ -35,3 +35,5 @@ void parseReg(char * reg, NFANode * startNode, int flag);
 void parseFirstReg(char * reg, NFANode * & startNode, int flag);
 
 int NFAtoDFA(NFANode * startNode);
+
+#endif

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef REGTODFA_H
+#define REGTODFA_H
 
 #include <string>
 
@@ -60,3 +61,5 @@ struct RegToDFA{
 	}
 
 };
+
+#endif
