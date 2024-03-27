@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(your_project_name)  # Change "your_project_name" to the actual name of your project
+project(SEULex)  # Change "your_project_name" to the actual name of your project
 
 # Add the executable
 add_executable(your_executable_name main.cpp Lex.cpp)
