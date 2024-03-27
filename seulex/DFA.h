@@ -1,122 +1,78 @@
-#ifndef DFA_H
-#define DFA_H
-
-#include <cstdlib>
-
-#include <cstdio>
-
-#include <stack>
-#include <utility>
-
-#include <map>
-#include <set>
-#include <queue>
-
-#include <unordered_map>
-
+#include <fstream>
 #include <vector>
+#include <deque>
+#include <string>
+#include <map>
+#include <array>
+using std::ifstream;
+using std::ofstream;
+using std::vector;
+using std::deque;
+using std::array;
+using std::map;
+using std::string;
 
-struct DFANode {
-	int id;
-	int flag = 0;
-	std::map<char, DFANode*> ptrs;
+int ParseLexFile(ifstream& ifs, ofstream& ofs);
+
+// Uncertain finite automata:
+// The status set is all lines of Ntran
+// Input the alphabet as ASCII characters (129 columns with ε)
+// Convert function to member Ntran
+// The start state is the first line of Ntran
+// The accept state is the last line of Ntran
+class NFA{
+public:
+	typedef array<vector<size_t>, 129> NST;	// Each row in the NFA state table: Transitions to other states.
+											// Each row contains 129 vectors
+											// Represents a successor collection on 128 ASCII and epsilon
+											// There is no duplication when adding, and it is more efficient to add 
+											// and change things using vector instead of set
+	NFA() {
+		Ntran.push_back(NST());
+	}
+	NFA(char ch);
+	inline size_t get_size()const { return Ntran.size(); }
+	void opt_union(const NFA&);
+	void opt_concat(const NFA&);
+	void opt_star();
+	void opt_plus();
+	void opt_quest();
+	vector<size_t> merge_nfa(const vector<NFA>&);
+	vector<size_t> epsilon_closure(size_t s)const;
+	vector<size_t> epsilon_closure(const vector<size_t>& ss)const;
+	vector<size_t> move(const vector<size_t>& ss, char a)const;
+	~NFA() {}
+private:
+	deque<NST> Ntran;		// Set of states (faster random access and double end add/delete with deque)
 };
 
-extern DFANode DFANodes[65536], minDFA[65536];
+// Deterministic finite automata:
+// The state set is all lines of Dtran
+// Enter the alphabet as ASCII characters (128 columns)
+// Convert function to member Dtran
+// The first line of Dtran when the start state
+// The acceptance status is reflected in the member accepts
+class DFA {
+public:
+	typedef array<size_t, 128> DST;		// Each row in the DFA state table: Transitions to other states
+										// Each row contains 128 size t
+										// Represents the successor on 128 ASCII, with none for empty
+	DFA(const NFA& , const vector<size_t>& );
+	// DFA(const NFA& , size_t );
+	inline size_t get_size()const { return Dtran.size(); }
+	inline size_t get_tran(size_t i, size_t ch)const { return Dtran[i][ch]; }
+	inline const vector<size_t> get_accepts()const { return accepts; }
+	void minimize();
+	void delete_dead_states();
+private:
+	vector<DST> Dtran;				// state transition
+	vector<size_t> accepts;			// The mode number corresponds to the accepted state, and the mode number corresponds to -1 for the non-accepted state
 
-struct DFAMinimizerClass {
-	std::vector< std::set<int> > DFASets;
-	int DFANodeIdx[65536];
-
-	void init(int stateCnt) {
-		std::map<int, std::set<int> > initialSets;
-		for (int i = 0; i < stateCnt; ++i) {
-			int dfatype = DFANodes[i].flag;
-			initialSets[dfatype].insert(i);
+	DST newDST() {					// -1 indicates no conversion
+		DST st;
+		for (size_t& i : st) {
+			i = -1;
 		}
-		for (auto & p_ : initialSets) {
-			DFASets.push_back(p_.second);
-			for (int idx : p_.second) {
-				DFANodeIdx[idx] = DFASets.size() - 1;
-			}
-		}
+		return st;
 	}
-
-	void deal() {
-		int last_size;
-		int z = 0;
-		do {
-			last_size = DFASets.size();
-			for (int i = 0; i < DFASets.size(); ++i) {
-				auto & curSet = DFASets[i];
-				std::set<int> splitedSet;
-				int stde = *(curSet.begin());
-				auto & stdtable = DFANodes[stde].ptrs;
-				for (int e : curSet) {
-					auto & table = DFANodes[e].ptrs;
-					bool notSame = false;
-					if (stdtable.size() == table.size()) {
-						for (auto p_ : stdtable) {
-							auto it = table.find(p_.first);
-							if (it == table.end()) {
-								notSame = true;
-								break;
-							}
-							else {
-								if (DFANodeIdx[p_.second->id] != DFANodeIdx[it->second->id]) {
-									notSame = true;
-									break;
-								}
-							}
-						}
-					}
-					else {
-						notSame = true;
-					}
-					if (notSame) splitedSet.insert(e);
-				}
-				if (!splitedSet.empty()) {
-
-					//printf(" %d size\n", splitedSet.size());
-					DFASets.push_back(splitedSet);                   // curSet no use again
-					int newIdx = DFASets.size() - 1;
-					for (int e : splitedSet) {
-						DFASets[i].erase(e);
-						DFANodeIdx[e] = newIdx;
-					}
-				}
-
-			}
-
-		} while (DFASets.size() != last_size);
-
-	}
-
-	void show() {
-		for (int i = 0; i < DFASets.size(); ++i) {
-			printf("%3d : ", i);
-			for (int j : DFASets[i]) {
-				printf("%5d", j);
-			}
-			printf("\n");
-		}
-	}
-
-	int generate() {
-		for (int i = 0; i < DFASets.size(); ++i) {
-			minDFA[i].id = i;
-			auto e = *(DFASets[i].begin());
-			minDFA[i].flag = DFANodes[e].flag;
-			for (auto & p_ : DFANodes[e].ptrs) {
-				char c = p_.first;
-				int idx = DFANodeIdx[p_.second->id];
-				minDFA[i].ptrs[c] = &minDFA[idx];
-			}
-		}
-		return DFASets.size();
-	}
-
 };
-extern DFAMinimizerClass DFAMinimizer;
-
-#endif

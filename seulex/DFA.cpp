@@ -146,20 +146,21 @@ void NFA::opt_quest()
 	// Add an epsilon transition from the initial state to the accepted state
 	Ntran[0][128].push_back(Ntran.size() - 1);
 }
-// 合并一系列 NFA，依次返回接受状态的序号，即第 i 个自动机对应的接受状态存储在第 i 个位置
+// A series of Nfas are merged to return the sequence number of the accepted states,
+// that is, the accepted state corresponding to the I-th automaton is stored in the I-th position
 vector<size_t> NFA::merge_nfa(const vector<NFA> &nfas)
 {
 	vector<size_t> accepts;
 	Ntran.clear();
-	Ntran.push_back(NST()); // 新建一个只有开始状态的 NFA
+	Ntran.push_back(NST()); // Create a new NFA with only the start state
 	size_t offset = 1;
 	for (auto nfa : nfas)
 	{
-		Ntran[0][128].push_back(offset); // 新建状态 0 到待合并自动机的初始状态的 epsilon 转换
+		Ntran[0][128].push_back(offset); // epsilon transition from new state 0 to the initial state of the automaton to be merged
 		size_t size = nfa.get_size();
 		for (auto s : nfa.Ntran)
 		{
-			Ntran.push_back(s); // 加入待合并自动机的所有状态
+			Ntran.push_back(s); // Adds all states of the automaton to be merged
 		}
 		for (size_t i = 0; i < size; ++i)
 		{
@@ -167,26 +168,27 @@ vector<size_t> NFA::merge_nfa(const vector<NFA> &nfas)
 			{
 				for (auto &spt : t)
 				{
-					spt += offset; // 状态号加上偏移
+					spt += offset; // Status number plus offset
 				}
 			}
 		}
 		offset += size;
-		accepts.push_back(offset - 1); // 加入接受状态
+		accepts.push_back(offset - 1); // add accept state
 	}
 	return accepts;
 }
-// 求一个状态的 epsilon 闭包
+
+// Find an epsilon closure of a state
 vector<size_t> NFA::epsilon_closure(size_t s) const
 {
 	vector<size_t> tmp{s};
 	return epsilon_closure(tmp);
 }
-// 求一组状态的 epsilon 闭包
+// Find the epsilon closure of a set of states
 vector<size_t> NFA::epsilon_closure(const vector<size_t> &ss) const
 {
-	set<size_t> resSet(ss.begin(), ss.end()); // 用 ss 初始化 resSet
-	stack<size_t, vector<size_t>> stk(ss);	  // 用 ss 初始化 stack
+	set<size_t> resSet(ss.begin(), ss.end()); // Initialize the resSet with ss
+	stack<size_t, vector<size_t>> stk(ss);	  // Initialize the stack with ss
 	while (!stk.empty())
 	{
 		size_t t = stk.top();
@@ -200,14 +202,16 @@ vector<size_t> NFA::epsilon_closure(const vector<size_t> &ss) const
 			}
 		}
 	}
-	vector<size_t> res; // 将结果转换为 vector 仅仅为了方便函数调用
+	vector<size_t> res; // The result is converted to a vector only for the convenience of function calls
 	for (size_t i : resSet)
-	{ // 注意返回的 vector 一定是排过序的
+	{ // Note that the returned vector must be sorted
 		res.push_back(i);
 	}
 	return res;
 }
-// 求一组状态的 move 函数（此函数的结果不是一个集合，可能有重复的元素，但始终配合 epsilon 闭包使用）
+
+// move function that finds a set of states (the result of this function is
+// not a set, may have duplicate elements, but is always used along with epsilon closures)
 vector<size_t> NFA::move(const vector<size_t> &ss, char a) const
 {
 	vector<size_t> res;
@@ -222,46 +226,47 @@ vector<size_t> NFA::move(const vector<size_t> &ss, char a) const
 	return res;
 }
 
-// 有关 DFA 的定义
+// Definition of DFA
 
-// 用合并的 NFA （多个接受状态）初始化 DFA
+// Initialize the DFA with the merged NFA (multiple accept states)
 DFA::DFA(const NFA &nfa, const vector<size_t> &nacn)
 {
 
-	vector<vector<size_t>> Dstates; // DFA 的每个状态对应 NFA 的一个状态集合
-	stack<size_t> unFlaged;			// 未标记的 DFA 状态
+	vector<vector<size_t>> Dstates; // Each state of the DFA corresponds to a set of states of the NFA
+	stack<size_t> unFlaged;			// Unmarked DFA status
 
-	Dstates.push_back(nfa.epsilon_closure(0)); // Dstates 最开始只有 epsilon-closure(s0)
-	Dtran.push_back(newDST());				   // Dtran 中添加一个状态
-	unFlaged.push(0);						   // 并且不加标记
+	Dstates.push_back(nfa.epsilon_closure(0)); // Dstates started with epsilon-closure(s0)
+	Dtran.push_back(newDST());				   // Add a state to Dtran
+	unFlaged.push(0);						   // And not marked
 
 	while (!unFlaged.empty())
 	{
-		size_t Tidx = unFlaged.top(); // 取出一个未标记 DFA 状态
+		size_t Tidx = unFlaged.top(); // Retrieves an unmarked DFA state
 		unFlaged.pop();
 		size_t Uidx = 0;
-		vector<size_t> T = Dstates[Tidx]; // 对应的 NFA 状态集合
+		vector<size_t> T = Dstates[Tidx]; // The corresponding set of NFA states
 		for (size_t a = 0; a < 128; ++a)
 		{
 			vector<size_t> U = nfa.epsilon_closure(nfa.move(T, (char)a));
 			if (!U.empty())
-			{ // 确实有转换
+			{ // There is a conversion
 				bool UinDstates = false;
 				for (size_t i = 0; i < Dstates.size(); ++i)
-				{ // U 是否在 Dstates 中
+				{ // Determine whether U is in Dstates
 					if (U == Dstates[i])
-					{ // 因为求 epsilon 闭包的函数的结果都是排过序的，所以可以直接比较
+					{ 	// Because the results of the functions that evaluate epsilon
+						// closures are all sorted, they can be directly compared
 						UinDstates = true;
 						Uidx = i;
 						break;
 					}
 				}
 				if (!UinDstates)
-				{							   // U 不在 Dstates 中
-					Dstates.push_back(U);	   // 加入 Dstates
-					Dtran.push_back(newDST()); // Dtran 中添加一个状态
+				{							   // U is not in Dstates
+					Dstates.push_back(U);	   // add into Dstates
+					Dtran.push_back(newDST()); // Add a state to Dtran
 					Uidx = Dstates.size() - 1;
-					unFlaged.push(Uidx); // 并且不加标记
+					unFlaged.push(Uidx); // And not marked
 				}
 				Dtran[Tidx][(size_t)a] = Uidx;
 			}
@@ -269,12 +274,13 @@ DFA::DFA(const NFA &nfa, const vector<size_t> &nacn)
 	}
 
 	for (size_t i = 0; i < Dstates.size(); ++i)
-	{							 // 判断 DFA 状态是否是接受状态
-		size_t firstAccept = -1; // 取最先列出的模式对应接受状态
+	{							 // Determine whether the DFA status is accepted
+		size_t firstAccept = -1; // Takes the first listed pattern corresponding to the accepted state
 		for (auto s : Dstates[i])
 		{
 			if (nacn[s] != -1)
 			{
+				// -1 + size_t => very very large
 				firstAccept = nacn[s] < firstAccept ? nacn[s] : firstAccept;
 			}
 		}
@@ -1187,13 +1193,10 @@ int ParseLexFile(ifstream &ifs, ofstream &ofs)
 	vector<vector<char>> helper3;
 	for (auto r : rulesSeq)
 	{
-		helper1.push_back(deal_dot(r));
-		helper2.push_back(seq_to_infix(deal_dot(r)));
-		helper3.push_back(infix_to_suffix(seq_to_infix(deal_dot(r))));
 		nfas.push_back(suffix_to_nfa(infix_to_suffix(seq_to_infix(deal_dot(r)))));
 	}
 
-	// 合并所有 NFA，输出总 NFA 和接受状态编号表
+	// Merge all Nfas, output the total NFA and accept the status number table.
 
 	NFA mergedNFA;
 	vector<size_t> NAcceptedStates = mergedNFA.merge_nfa(nfas);
@@ -1207,13 +1210,13 @@ int ParseLexFile(ifstream &ifs, ofstream &ofs)
 		Naccept[NAcceptedStates[i]] = i;
 	}
 
-	// 将 NFA 转换为 DFA，将 DFA 最小化
+	// Convert NFA to DFA, minimizing DFA
 
 	DFA dfa(mergedNFA, Naccept);
 	// dfa.minimize();
 	// dfa.delete_dead_states();
 
-	// 依据 DFA 生成词法分析器源文件
+	// Generate lexical analyzer source files according to DFA
 
 	ofs << toCopy << '\n';
 	gen_code(ofs, dfa, actions);
