@@ -1,4 +1,5 @@
-# 不知道该写什么.
-## 寄。
+mkdir build
+cd build
+cmake ..
 
-![alt text](image.png)
+make
