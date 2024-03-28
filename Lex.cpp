@@ -287,70 +287,112 @@ DFA::DFA(const NFA &nfa, const vector<size_t> &nacn)
 		accepts.push_back(firstAccept);
 	}
 }
-// 最小化 DFA
-// void DFA::minimize() {
-//	vector<size_t> sttGroup(get_size());	// 状态所属哪个组
-//	vector<list<size_t>> grpStates;			// 每个组里有哪些状态
-//	vector<array<size_t, 128>> newTran;
-//	size_t maxAccNum = 0;					// 最大的接受状态编号
-//	for (auto n : accepts) {
-//		if (n != -1) {
-//			maxAccNum = n > maxAccNum ? n : maxAccNum;
-//		}
-//	}
-//	for (size_t i = 0; i < maxAccNum + 2; ++i) {	// 最开始，共有 maxAccNum + 2 个组
-//													// 分别对应 maxAccNum + 1 个不同的接受状态组
-//													// 和 1 个其他状态组
-//		grpStates.push_back(list<size_t>());
-//	}
-//	for (size_t i = 0; i < get_size(); ++i) {
-//		if (accepts[i] == -1) {				// 对非接受状态
-//			sttGroup[i] = maxAccNum + 1;
-//			grpStates[maxAccNum + 1].push_back(i);
-//		}
-//		else {
-//			sttGroup[i] = accepts[i];
-//			grpStates[accepts[i]].push_back(i);
-//		}
-//	}
-//	bool modified = false;
-//	do {
-//		modified = false;
-//		for (auto g : grpStates) {
-//			if (g.size() == 1) {					// 如果该组中只有一个状态则不考虑
-//				continue;
-//			}
-//			else {
-//				for (list<size_t>::iterator s = g.begin(); s != g.end(); ++s) {
-//					for (list<size_t>::iterator t = s + 1; t != g.end(); ++t) {
-//						for (size_t ch = 0; ch < 128; ++ch) {
-//							if (sttGroup[Dtran[*s][ch]] != sttGroup[Dtran[*t][ch]]) {
-//
-//							}
-//						}
-//						if (modified) {
-//							break;
-//						}
-//					}
-//					if (modified) {
-//						break;
-//					}
-//				}
-//			}
-//		}
-//	} while (modified);
-//}
-//// 删除死状态
-// void DFA::delete_dead_states() {
-//	for (size_t i = 0; i < get_size(); ++i) {
-//		if (accepts[i] != -1) {				// 是接受状态，跳过
-//			continue;
-//		}
-//		else {
-//
-//		}
-//	}
-// }
+
+// minimize DFA
+void DFA::minimize() {
+	vector<size_t> sttGroup(get_size());	// The group to which the status belongs
+	vector<set<size_t>> grpStates;			// What states are in each group
+	size_t maxAccNum = 0;					// Maximum acceptance status number
+	for (auto n : accepts) {
+		if (n != -1) {
+			maxAccNum = n > maxAccNum ? n : maxAccNum;
+		}
+	}
+	for (size_t i = 0; i < maxAccNum + 2; ++i) {	// Initially, there are maxAccNum + 2 groups
+													// Corresponding to maxAccNum + 1 different accept status groups
+													// And 1 other status group
+		grpStates.push_back(set<size_t>());
+	}
+	for (size_t i = 0; i < get_size(); ++i) {
+		if (accepts[i] == -1) {				// The state of non-acceptance
+			sttGroup[i] = maxAccNum + 1;
+			grpStates[maxAccNum + 1].insert(i);
+		}
+		else {
+			sttGroup[i] = accepts[i];
+			grpStates[accepts[i]].insert(i);
+		}
+	}
+	bool modified = false;
+	do {
+		modified = false;
+		for (auto g : grpStates) {
+			if (g.size() == 1) {					// If there is only one state in the group, it is not considered
+				continue;
+			}
+			else {
+				vector<size_t> helper;
+				set<size_t>::iterator begin = g.begin();
+				for (set<size_t>::iterator s = g.begin(); s != g.end(); ++s) {
+					if(s == begin)
+						continue;
+					if(!modified) {
+						for (size_t ch = 0; ch < 128; ++ch) {
+							if ((Dtran[*begin][ch] != Dtran[*s][ch])&&(sttGroup[Dtran[*begin][ch]] != sttGroup[Dtran[*s][ch]])) {
+								modified = true;
+								helper.push_back(*s);
+							}
+						}
+					}
+					else {
+						size_t a = helper[0];
+						bool In_The_Same_Group = true;
+						for (size_t ch = 0; ch < 128; ++ch) {
+							if ((Dtran[*begin][ch] != Dtran[*s][ch])&&(sttGroup[Dtran[*begin][ch]] != sttGroup[Dtran[*s][ch]])) {
+								In_The_Same_Group = false;
+							}
+						}
+						if(In_The_Same_Group)
+							helper.push_back(*s);
+					}
+				}
+				set<size_t> newset;
+				if(helper.size() != 0) {
+					for(auto a: helper) {
+						g.erase(a);
+						sttGroup[a] = grpStates.size();
+						newset.insert(a);
+					}
+					grpStates.push_back(newset);
+				}
+			}
+		}
+	} while (modified);
+
+	size_t newstatessize = grpStates.size();
+
+	vector<DST> newDtran;
+	int size = grpStates.size();
+	stack<size_t> unFlaged;
+	newDtran.push_back(newDST());
+	unFlaged.push(0);
+
+	while (!unFlaged.empty()) {
+		size_t Tidx = unFlaged.top();
+		unFlaged.pop();
+		int i;
+		for(i=0; i < sttGroup.size(); i++)
+			if(sttGroup[i] == Tidx)
+				break;
+		for (size_t a = 0; a < 128; ++a)
+		{
+			int trans = Dtran[i][a];
+			
+		}
+	}
+}
+
+// Delete dead state
+void DFA::delete_dead_states() {
+	for (size_t i = 0; i < get_size(); ++i) {
+		if (accepts[i] != -1) {				// accept state, skip.
+			continue;
+		}
+		else {
+			
+		}
+	}
+}
 
 // Determine whether ch is a character that must be escaped in a regular expression
 // Regular expressions use the backslash character ('\') to indicate special forms or
@@ -1188,9 +1230,6 @@ int ParseLexFile(ifstream &ifs, ofstream &ofs)
 	// Convert all regular expressions to NFA
 
 	vector<NFA> nfas;
-	vector<vector<char>> helper1;
-	vector<vector<char>> helper2;
-	vector<vector<char>> helper3;
 	for (auto r : rulesSeq)
 	{
 		nfas.push_back(suffix_to_nfa(infix_to_suffix(seq_to_infix(deal_dot(r)))));
